@@ -2,9 +2,9 @@ package product
 
 import "gorm.io/gorm"
 
-type Repository interface{
-	Get(id uint) (*Product,error)
-	Create(model Product) (uint,error)
+type Repository interface {
+	Get(id uint) (*Product, error)
+	Create(model Product) (uint, error)
 	Migration() error
 }
 
@@ -16,17 +16,17 @@ func (r repository) Get(id uint) (*Product, error) {
 	product := &Product{ID: id}
 	err := r.db.First(product).Error
 	if err != nil {
-		return nil,err
+		return nil, err
 	}
-	return product,nil
+	return product, nil
 }
 
 func (r repository) Create(product Product) (uint, error) {
 	err := r.db.Create(&product).Error
 	if err != nil {
-		return 0,err
+		return 0, err
 	}
-	return product.ID,nil
+	return product.ID, nil
 }
 
 func (r repository) Migration() error {
@@ -35,7 +35,6 @@ func (r repository) Migration() error {
 
 var _ Repository = repository{}
 
-func NewRepository(db *gorm.DB) Repository{
-return repository{db:db}
+func NewRepository(db *gorm.DB) Repository {
+	return repository{db: db}
 }
-
