@@ -12,13 +12,16 @@ type ErrorResponse struct {
 	ErrorMessageEn string
 }
 
-func ValidateProduct(product Product) []*ErrorResponse {
+func ValidateProduct(product Product) ([]*ErrorResponse, error) {
 	var errors []*ErrorResponse
 
 	uni := ut.New(turkish.New())
 	trans, _ := uni.GetTranslator("tr")
 	validate := validator.New()
-	trvalidator.RegisterDefaultTranslations(validate, trans)
+	errTranslate := trvalidator.RegisterDefaultTranslations(validate, trans)
+	if errTranslate != nil {
+		return nil, errTranslate
+	}
 	err := validate.Struct(product)
 	if err != nil {
 		for _, err := range err.(validator.ValidationErrors) {
@@ -29,5 +32,5 @@ func ValidateProduct(product Product) []*ErrorResponse {
 
 		}
 	}
-	return errors
+	return errors, nil
 }
