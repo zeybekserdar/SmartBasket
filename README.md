@@ -6,3 +6,6 @@ SmartBasket is an example of a simple testable go web service.
 - Go Fiber
 - Gorm
 - Testify
+- Validator with locales
+- GoDotEnv
+- JWT
