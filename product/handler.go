@@ -2,52 +2,105 @@ package product
 
 import (
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofrs/uuid"
 )
 
-type Handler interface {
+type IProductHandler interface {
 	Get(ctx *fiber.Ctx) error
+	GetAll(ctx *fiber.Ctx) error
 	Create(ctx *fiber.Ctx) error
+	Update(ctx *fiber.Ctx) error
+	Delete(ctx *fiber.Ctx) error
 }
 
 type handler struct {
-	service Service
+	service IProductService
+}
+
+func (h handler) Update(ctx *fiber.Ctx) error {
+	var id = ctx.Params("id")
+	model, err := h.service.Get(uuid.FromStringOrNil(id))
+	if err != nil {
+		return ctx.Status(fiber.StatusNotFound).JSON(Response{Error: err.Error()})
+	}
+
+	newProduct := Product{}
+	err = ctx.BodyParser(&newProduct)
+	if err != nil {
+		return ctx.Status(fiber.StatusNotFound).JSON(Response{Error: err.Error()})
+	}
+
+	updatedId, err := h.service.Update(*model, newProduct)
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(Response{Error: err.Error()})
+	}
+	return ctx.Status(fiber.StatusOK).JSON(Response{Data: updatedId})
+}
+
+func (h handler) Delete(ctx *fiber.Ctx) error {
+	var id = ctx.Params("id")
+	model, err := h.service.Get(uuid.FromStringOrNil(id))
+	if err != nil {
+		return ctx.Status(fiber.StatusNotFound).JSON(Response{Error: err.Error()})
+	}
+	deletedId, err := h.service.Delete(*model)
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(Response{Error: err.Error()})
+	}
+	return ctx.Status(fiber.StatusOK).JSON(Response{Data: deletedId})
 }
 
 func (h handler) Get(ctx *fiber.Ctx) error {
-	id,err := ctx.ParamsInt("id")
+	var id = ctx.Params("id")
+	model, err := h.service.Get(uuid.FromStringOrNil(id))
 	if err != nil {
-		return ctx.Status(400).JSON(Response{Error: err.Error()})
+		return ctx.Status(fiber.StatusNotFound).JSON(Response{Error: err.Error()})
 	}
 
-	model,err := h.service.Get(uint(id))
-	if err != nil {
-		return ctx.Status(404).JSON(Response{Error: err.Error()})
-	}
+	return ctx.Status(fiber.StatusOK).JSON(Response{Data: model})
 
-	return ctx.Status(200).JSON(Response{Data: model})
+}
+
+func (h handler) GetAll(ctx *fiber.Ctx) error {
+	products, err := h.service.GetAll()
+	if err != nil {
+		return ctx.Status(fiber.StatusNotFound).JSON(Response{Error: err.Error()})
+	}
+	return ctx.Status(fiber.StatusOK).JSON(Response{Data: products})
 
 }
 
 func (h handler) Create(ctx *fiber.Ctx) error {
-	model := Product{}
-	err := ctx.BodyParser(&model)
+	product := Product{}
+	err := ctx.BodyParser(&product)
 	if err != nil {
-		return ctx.Status(400).JSON(Response{Error: err.Error()})
+		return ctx.Status(fiber.StatusNotFound).JSON(Response{Error: err.Error()})
 	}
-	_,err = h.service.Create(model)
-	if err != nil {
-		ctx.Status(400).JSON(Response{Error: err.Error()})
+
+	validationErr, err := ValidateProduct(product)
+	if validationErr != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(validationErr)
 	}
-	return ctx.SendStatus(201)
+	newProduct, errSvc := h.service.Create(product)
+	if errSvc != nil {
+		return ctx.Status(fiber.StatusNotFound).JSON(Response{Error: errSvc.Error()})
+	}
+	return ctx.Status(fiber.StatusCreated).JSON(Response{Data: ProductDto{Name: newProduct.Name, Price: newProduct.Price, Type: newProduct.Type}})
 }
 
-var _ Handler = handler{}
+var _ IProductHandler = handler{}
 
-func NewHandler(service Service) Handler {
+func NewHandler(service IProductService) IProductHandler {
 	return handler{service: service}
 }
 
 type Response struct {
-	Error string 		`json:"error"`
-	Data interface{}	`json:"data"`
+	Error string      `json:"error"`
+	Data  interface{} `json:"data"`
+}
+
+type ProductDto struct {
+	Name  string `json:"name"`
+	Price string `json:"price"`
+	Type  string `json:"type"`
 }
