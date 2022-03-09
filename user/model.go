@@ -6,13 +6,13 @@ import (
 )
 
 type User struct {
-	ID        uuid.UUID `json:"id" gorm:"primary_key;uuid"`
-	FirstName string    `json:"firstName" validate:"required"`
-	LastName  string    `json:"lastName" validate:"required"`
-	Username  string    `json:"username" validate:"required"`
-	Email     string    `json:"email" validate:"email,required"`
-	Password  string    `json:"password" validate:"required"`
-	gorm.Model
+	ID         uuid.UUID `json:"id" gorm:"primary_key;uuid"`
+	FirstName  string    `json:"firstName" validate:"required"`
+	LastName   string    `json:"lastName" validate:"required"`
+	Username   string    `json:"username" validate:"required"`
+	Email      string    `json:"email" validate:"email,required"`
+	Password   string    `json:"password" validate:"required"`
+	gorm.Model `json:"-"`
 }
 
 func (user *User) BeforeCreate() error {
