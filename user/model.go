@@ -15,7 +15,7 @@ type User struct {
 	gorm.Model `json:"-"`
 }
 
-func (user *User) BeforeCreate() error {
+func (user *User) BeforeCreate(*gorm.DB) error {
 	id, err := uuid.NewV4()
 	if err != nil {
 		return err

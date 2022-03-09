@@ -13,7 +13,7 @@ type Product struct {
 	gorm.Model `json:"-"`
 }
 
-func (product *Product) BeforeCreate() error {
+func (product *Product) BeforeCreate(*gorm.DB) error {
 	id, err := uuid.NewV4()
 	if err != nil {
 		return err
